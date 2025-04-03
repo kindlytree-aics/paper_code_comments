@@ -8,10 +8,7 @@
 如通过BERT输出的对应[CLS]位置的embeddings张量，在代码实现中为UniversalSentenceEncoder，实现位置在./data/utils/text_processing.py中，
 在pretrain_config.py的定义方式为:ModuleSpec.create(UniversalSentenceEncoder)）
 
-根据逻辑和RT-1中类似的实现，该融合在Transformer进行注意力机制计算之前，在Transformer模型输入数据时已经做好相关的融合工作，具体解释如下
-
-[分词器实现](https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/crossformer_module.py#L159)
-
+[分词器实现](https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/crossformer_module.py#L159)。根据逻辑和RT-1中类似的实现，该融合在Transformer进行注意力机制计算之前，在Transformer模型输入数据时已经做好相关的融合工作，具体解释如下：  
 整个模型类为CrossFormerTransformer，模型输入处理的入口为：https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/crossformer_module.py#L89
 
 - 关于task分词器的实现
@@ -367,91 +364,6 @@ def _create_positional_embedding(self, name: str, tokens: jax.Array):
 
 ```
 
-## 问题4： 异构的机器人数据集如何在一起训练（不同horizone窗口的数据对应的tokens输入序列的长度大小不同），以及有什么标记来将transformer的output的embeddings输出给对应的任务head吗？
-
-回答：回答：首先针对不同的数据集的特定格式定义了转换函数将数据转换成统一的形式：OXE_STANDARDIZATION_TRANSFORMS
-
-
-```
-# https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/data/oxe/oxe_standardization_transforms.py#L1070
-
-OXE_STANDARDIZATION_TRANSFORMS = {
-    "bridge_dataset": bridge_dataset_transform,
-    "fractal20220817_data": rt1_dataset_transform,
-    "kuka": kuka_dataset_transform,
-    "taco_play": taco_dataset_transform,
-    "taco_extra": taco_dataset_transform,
-    "jaco_play": jaco_play_dataset_transform,
-    "berkeley_cable_routing": berkeley_cable_routing_dataset_transform,
-    "roboturk": roboturk_dataset_transform,
-    "nyu_door_opening_surprising_effectiveness": nyu_door_opening_dataset_transform,
-    "viola": viola_dataset_transform,
-    "berkeley_autolab_ur5": berkeley_autolab_ur5_dataset_transform,
-    "toto": toto_dataset_transform,
-    "language_table": language_table_dataset_transform,
-    "columbia_cairlab_pusht_real": pusht_dataset_transform,
-    "stanford_kuka_multimodal_dataset_converted_externally_to_rlds": stanford_kuka_multimodal_dataset_transform,
-    "nyu_rot_dataset_converted_externally_to_rlds": nyu_rot_dataset_transform,
-    "stanford_hydra_dataset_converted_externally_to_rlds": stanford_hydra_dataset_transform,
-    "austin_buds_dataset_converted_externally_to_rlds": austin_buds_dataset_transform,
-    "nyu_franka_play_dataset_converted_externally_to_rlds": nyu_franka_play_dataset_transform,
-    "maniskill_dataset_converted_externally_to_rlds": maniskill_dataset_transform,
-    "furniture_bench_dataset_converted_externally_to_rlds": furniture_bench_dataset_transform,
-    "cmu_franka_exploration_dataset_converted_externally_to_rlds": cmu_franka_exploration_dataset_transform,
-    "ucsd_kitchen_dataset_converted_externally_to_rlds": ucsd_kitchen_dataset_transform,
-    "ucsd_pick_and_place_dataset_converted_externally_to_rlds": ucsd_pick_place_dataset_transform,
-    "austin_sailor_dataset_converted_externally_to_rlds": austin_sailor_dataset_transform,
-    "austin_sirius_dataset_converted_externally_to_rlds": austin_sirius_dataset_transform,
-    "bc_z": bc_z_dataset_transform,
-    "utokyo_pr2_opening_fridge_converted_externally_to_rlds": tokyo_pr2_opening_fridge_dataset_transform,
-    "utokyo_pr2_tabletop_manipulation_converted_externally_to_rlds": tokyo_pr2_tabletop_manipulation_dataset_transform,
-    "utokyo_xarm_pick_and_place_converted_externally_to_rlds": utokyo_xarm_pick_place_dataset_transform,
-    "utokyo_xarm_bimanual_converted_externally_to_rlds": utokyo_xarm_bimanual_dataset_transform,
-    "robo_net": robo_net_dataset_transform,
-    "berkeley_mvp_converted_externally_to_rlds": berkeley_mvp_dataset_transform,
-    "berkeley_rpt_converted_externally_to_rlds": berkeley_rpt_dataset_transform,
-    "kaist_nonprehensile_converted_externally_to_rlds": kaist_nonprehensible_dataset_transform,
-    "stanford_mask_vit_converted_externally_to_rlds": stanford_mask_vit_dataset_transform,
-    "tokyo_u_lsmo_converted_externally_to_rlds": tokyo_lsmo_dataset_transform,
-    "dlr_sara_pour_converted_externally_to_rlds": dlr_sara_pour_dataset_transform,
-    "dlr_sara_grid_clamp_converted_externally_to_rlds": dlr_sara_grid_clamp_dataset_transform,
-    "dlr_edan_shared_control_converted_externally_to_rlds": dlr_edan_shared_control_dataset_transform,
-    "asu_table_top_converted_externally_to_rlds": asu_table_top_dataset_transform,
-    "stanford_robocook_converted_externally_to_rlds": robocook_dataset_transform,
-    "imperialcollege_sawyer_wrist_cam": imperial_wristcam_dataset_transform,
-    "iamlab_cmu_pickup_insert_converted_externally_to_rlds": iamlab_pick_insert_dataset_transform,
-    "uiuc_d3field": uiuc_d3field_dataset_transform,
-    "utaustin_mutex": utaustin_mutex_dataset_transform,
-    "berkeley_fanuc_manipulation": berkeley_fanuc_dataset_transform,
-    "cmu_playing_with_food": cmu_playing_with_food_dataset_transform,
-    "cmu_play_fusion": playfusion_dataset_transform,
-    "cmu_stretch": cmu_stretch_dataset_transform,
-    "omnimimic_gnm_dataset": omnimimic_gnm_transform,
-    "aloha_dagger_dataset": aloha_dataset_transform,
-    "aloha_mobile_dataset": aloha_dataset_transform,
-    "fmb_dataset": fmb_dataset_transform,
-    "dobbe": dobbe_dataset_transform,
-    "roboset": roboset_dataset_transform,
-    "rh20t": rh20t_dataset_transform,
-    "mujoco_manip": mujoco_manip_dataset_transform,
-    "go1": go1_dataset_transform,
-    "go1_real_dataset": go1_real_dataset_transform,
-    "a1": go1_dataset_transform,
-    "aloha_pen_uncap_diverse_dataset": aloha_pen_uncap_dataset_transform,
-    "aloha_new_sushi_dataset": aloha_pen_uncap_dataset_transform,
-    "aloha_dough_cut_dataset": aloha_dough_dataset_transform,
-    "aloha_lucy_dataset": aloha_dough_dataset_transform,
-    "aloha_drawer_dataset": aloha_dough_dataset_transform,
-    "aloha_pick_place_dataset": aloha_dough_dataset_transform,
-    "aloha_static_dataset": aloha_dough_dataset_transform,
-    "aloha_sushi_cut_full_dataset": aloha_dough_dataset_transform,
-    "droid": droid_dataset_transform,
-    "droid_wipe": droid_dataset_transform,
-    "droid_flip_pot_upright": droid_dataset_transform,
-}
-```
-
-
 ## 问题4： 异构的机器人数据集如何在一起训练，不同horizone窗口的数据对应的tokens输入序列的长度大小不同，是通过padding和mask相结合进行统一处理的吗？以及有什么标记来将transformer的output的embeddings输出给对应的任务head吗？
 
 回答：首先针对不同的数据集的特定格式定义了转换函数将数据转换成统一的形式：OXE_STANDARDIZATION_TRANSFORMS。
@@ -569,4 +481,89 @@ mask = (
 
 loss, metrics = continuous_loss(mean, actions, mask, loss_type=self.loss_type)
 return loss, metrics
+```
+
+
+## 问题5： 异构的机器人数据集处理方面有哪些特殊的需要注意的地方？
+
+回答：回答：首先针对不同的数据集的特定格式定义了转换函数将数据转换成统一的形式：OXE_STANDARDIZATION_TRANSFORMS
+
+
+```
+# https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/data/oxe/oxe_standardization_transforms.py#L1070
+
+OXE_STANDARDIZATION_TRANSFORMS = {
+    "bridge_dataset": bridge_dataset_transform,
+    "fractal20220817_data": rt1_dataset_transform,
+    "kuka": kuka_dataset_transform,
+    "taco_play": taco_dataset_transform,
+    "taco_extra": taco_dataset_transform,
+    "jaco_play": jaco_play_dataset_transform,
+    "berkeley_cable_routing": berkeley_cable_routing_dataset_transform,
+    "roboturk": roboturk_dataset_transform,
+    "nyu_door_opening_surprising_effectiveness": nyu_door_opening_dataset_transform,
+    "viola": viola_dataset_transform,
+    "berkeley_autolab_ur5": berkeley_autolab_ur5_dataset_transform,
+    "toto": toto_dataset_transform,
+    "language_table": language_table_dataset_transform,
+    "columbia_cairlab_pusht_real": pusht_dataset_transform,
+    "stanford_kuka_multimodal_dataset_converted_externally_to_rlds": stanford_kuka_multimodal_dataset_transform,
+    "nyu_rot_dataset_converted_externally_to_rlds": nyu_rot_dataset_transform,
+    "stanford_hydra_dataset_converted_externally_to_rlds": stanford_hydra_dataset_transform,
+    "austin_buds_dataset_converted_externally_to_rlds": austin_buds_dataset_transform,
+    "nyu_franka_play_dataset_converted_externally_to_rlds": nyu_franka_play_dataset_transform,
+    "maniskill_dataset_converted_externally_to_rlds": maniskill_dataset_transform,
+    "furniture_bench_dataset_converted_externally_to_rlds": furniture_bench_dataset_transform,
+    "cmu_franka_exploration_dataset_converted_externally_to_rlds": cmu_franka_exploration_dataset_transform,
+    "ucsd_kitchen_dataset_converted_externally_to_rlds": ucsd_kitchen_dataset_transform,
+    "ucsd_pick_and_place_dataset_converted_externally_to_rlds": ucsd_pick_place_dataset_transform,
+    "austin_sailor_dataset_converted_externally_to_rlds": austin_sailor_dataset_transform,
+    "austin_sirius_dataset_converted_externally_to_rlds": austin_sirius_dataset_transform,
+    "bc_z": bc_z_dataset_transform,
+    "utokyo_pr2_opening_fridge_converted_externally_to_rlds": tokyo_pr2_opening_fridge_dataset_transform,
+    "utokyo_pr2_tabletop_manipulation_converted_externally_to_rlds": tokyo_pr2_tabletop_manipulation_dataset_transform,
+    "utokyo_xarm_pick_and_place_converted_externally_to_rlds": utokyo_xarm_pick_place_dataset_transform,
+    "utokyo_xarm_bimanual_converted_externally_to_rlds": utokyo_xarm_bimanual_dataset_transform,
+    "robo_net": robo_net_dataset_transform,
+    "berkeley_mvp_converted_externally_to_rlds": berkeley_mvp_dataset_transform,
+    "berkeley_rpt_converted_externally_to_rlds": berkeley_rpt_dataset_transform,
+    "kaist_nonprehensile_converted_externally_to_rlds": kaist_nonprehensible_dataset_transform,
+    "stanford_mask_vit_converted_externally_to_rlds": stanford_mask_vit_dataset_transform,
+    "tokyo_u_lsmo_converted_externally_to_rlds": tokyo_lsmo_dataset_transform,
+    "dlr_sara_pour_converted_externally_to_rlds": dlr_sara_pour_dataset_transform,
+    "dlr_sara_grid_clamp_converted_externally_to_rlds": dlr_sara_grid_clamp_dataset_transform,
+    "dlr_edan_shared_control_converted_externally_to_rlds": dlr_edan_shared_control_dataset_transform,
+    "asu_table_top_converted_externally_to_rlds": asu_table_top_dataset_transform,
+    "stanford_robocook_converted_externally_to_rlds": robocook_dataset_transform,
+    "imperialcollege_sawyer_wrist_cam": imperial_wristcam_dataset_transform,
+    "iamlab_cmu_pickup_insert_converted_externally_to_rlds": iamlab_pick_insert_dataset_transform,
+    "uiuc_d3field": uiuc_d3field_dataset_transform,
+    "utaustin_mutex": utaustin_mutex_dataset_transform,
+    "berkeley_fanuc_manipulation": berkeley_fanuc_dataset_transform,
+    "cmu_playing_with_food": cmu_playing_with_food_dataset_transform,
+    "cmu_play_fusion": playfusion_dataset_transform,
+    "cmu_stretch": cmu_stretch_dataset_transform,
+    "omnimimic_gnm_dataset": omnimimic_gnm_transform,
+    "aloha_dagger_dataset": aloha_dataset_transform,
+    "aloha_mobile_dataset": aloha_dataset_transform,
+    "fmb_dataset": fmb_dataset_transform,
+    "dobbe": dobbe_dataset_transform,
+    "roboset": roboset_dataset_transform,
+    "rh20t": rh20t_dataset_transform,
+    "mujoco_manip": mujoco_manip_dataset_transform,
+    "go1": go1_dataset_transform,
+    "go1_real_dataset": go1_real_dataset_transform,
+    "a1": go1_dataset_transform,
+    "aloha_pen_uncap_diverse_dataset": aloha_pen_uncap_dataset_transform,
+    "aloha_new_sushi_dataset": aloha_pen_uncap_dataset_transform,
+    "aloha_dough_cut_dataset": aloha_dough_dataset_transform,
+    "aloha_lucy_dataset": aloha_dough_dataset_transform,
+    "aloha_drawer_dataset": aloha_dough_dataset_transform,
+    "aloha_pick_place_dataset": aloha_dough_dataset_transform,
+    "aloha_static_dataset": aloha_dough_dataset_transform,
+    "aloha_sushi_cut_full_dataset": aloha_dough_dataset_transform,
+    "droid": droid_dataset_transform,
+    "droid_wipe": droid_dataset_transform,
+    "droid_flip_pot_upright": droid_dataset_transform,
+}
 ```
