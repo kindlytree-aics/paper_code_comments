@@ -47,6 +47,7 @@ mapped = map(lambda x: x * x, dataset)  # ⚠️ 会报错或无法正确工作
 ### 数据集采样
 
 ```
+# 每次生成样本时，按权重随机选择一个数据集，再从该数据集取下一个样本。
 ds_combined = tf.data.Dataset.sample_from_datasets([ds, ds2], [0.5, 0.5])
 ```
 
@@ -135,6 +136,7 @@ DATASETS = [
 
 ```
 
+answer aided by deepseek r1
 以下是针对 Open X-Embodiment 主要子数据集的简明特性分析（按数据集名称字母顺序排列）：
 
 ---
@@ -317,7 +319,3 @@ DATASETS = [
 - **行为数据**：高精度轨迹跟踪（±0.1mm 重复精度）
 - **任务特性**：汽车零部件装配（螺丝拧紧、部件对接）
 - **机器人形态**：KUKA LBR iiwa 工业机械臂
-
----
-
-（由于篇幅限制，此处列出前 20 个数据集。如需剩余数据集的详细说明，请告知具体名称，我将继续补充完整分析。）
