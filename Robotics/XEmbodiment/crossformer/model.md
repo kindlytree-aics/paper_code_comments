@@ -144,8 +144,6 @@ encoder_def = ModuleSpec.instantiate(self.encoder)()
 image_tokens = encoder_def(enc_inputs, **encoder_input_kwargs)
 image_tokens = jnp.reshape(image_tokens, (b, t, -1, image_tokens.shape[-1]))
 
-
-
 # https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/components/vit_encoders.py#L261
 
 else:
@@ -309,8 +307,6 @@ for name, tok in self.observation_tokenizers.items():
 
 ```
 # https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/crossformer_module.py#L249
-
-
 for readout_name in readouts:
     group_name = f"readout_{readout_name}"
     # Readouts do not correspond to any inputs, just positional embeddings
@@ -339,7 +335,6 @@ for readout_name in readouts:
             attention_rules=readout_attention_rules,
         )
     )
-
 
 # https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/crossformer_module.py#L315
 def _create_positional_embedding(self, name: str, tokens: jax.Array):
