@@ -522,4 +522,17 @@ tfds.builder(name, data_dir=data_dir)
 - UR5: https://www.universal-robots.com/
 - xArm: https://www.ufactory.cc/xarm-collaborative-robot/ 
 - 移动机器人（Mobile Manipulators） https://hello-robot.com/
-- 
+- https://www.tacbot.cn/ https://github.com/frankaemika/franka_ros
+
+## 问题及任务：单臂机器人最为常见（基于视觉+自然语言指令），ALOHA基于双臂机器人（三个摄像头数据）较为特殊，请对几个较为特殊的机器人数据进行可视化显示
+
+
+## 在训练时的机器人数据的权重配比以及其配比是如何设置的，以及每个数据集的数据量如何统计（比如多少trajectories，多少frames（observations，actions））
+
+We classify the datasets that are most relevant to each of our evaluation settings
+(see Section 4) as the target datasets and up-weight them relative to the other datasets during training.
+
+Our target datasets are BridgeData [36] for WidowX evaluation,ALOHA-multi-task for ALOHA evaluation, GNM [41]
+for navigation evaluation, Go1-walk for quadruped evaluation, and Franka-tabletop for Franka evaluation.
+
+## 
