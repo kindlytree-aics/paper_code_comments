@@ -305,6 +305,11 @@ for name, tok in self.observation_tokenizers.items():
 回答：在该开源系统的实现中，readouts不对应任务输入，在实现上以生成位置嵌入的形式存在，但和其他的tokens不是进行elementwise的操作，而是concatenate到observations的tokens后面。
 
 ```
+
+# .\scripts\configs\pretrain_config.py中定义了不同形态的机器人的readout的长度
+readouts=dict(bimanual=100, single_arm=4, nav=4, quadruped=1),
+
+
 # https://github.com/rail-berkeley/crossformer/blob/4a56b64411e7ec039ea6cce6bbbe65a38f677db1/crossformer/model/crossformer_module.py#L249
 for readout_name in readouts:
     group_name = f"readout_{readout_name}"
