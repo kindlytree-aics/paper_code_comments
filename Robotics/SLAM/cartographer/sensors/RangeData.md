@@ -3,7 +3,7 @@
 统一表示传感器原始数据，为后续处理（如坐标变换、地图构建）提供结构化输入，是SLAM算法的基础数据单元。
 
 原始带时间戳的测量点 (TimedRangefinderPoint) 已经被用于执行运动补偿（Motion Compensation）和去畸变（Deskewing）。  
-RangeData 中存储的点云是补偿和去畸变后的结果，所有点都被转换到了与 RangeData 的 origin 相对应的统一参考系和时间点下（为不太时间信息的PointCloud）。
+RangeData 中存储的点云是补偿和去畸变后的结果，所有点都被转换到了与 RangeData 的 origin 相对应的统一参考系和时间点下（为不带时间信息的PointCloud）。
 
 
 封装单次传感器扫描数据，包含：
