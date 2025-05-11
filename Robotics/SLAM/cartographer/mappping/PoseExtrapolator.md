@@ -16,7 +16,6 @@ Quaternion rotation_;
 PoseExtrapolator 利用高频（通常几百赫兹）运动传感器（IMU/Odom）数据，在低频扫描数据（Lidar 或相机等用于扫描匹配的传感器频率较低，通常几十赫兹）之间架起了桥梁，既实现了对运动畸变的精确校正，又为关键的扫描匹配优化步骤提供了高质量的初始位姿估计，是 Cartographer实现高精度和高鲁棒性局部 SLAM 的关键组件之一。
 
 PoseExtrapolator主要依赖于imu数据或odometry数据进行位姿的初始估计，采用预计分的方式（可以通过循环调用imu_tracker中的advance实现单步积分的累积计算）
-
 姿态外推器作为Local SLAM的主要类成员，为Local SLAM提供位姿的初始估计值。
 
 PoseExtrapolator 提供的是一个高频的、短期的预测。
@@ -58,17 +57,17 @@ void PoseExtrapolator::TrimImuData() {
   }
 }
 ```
-- 
+- `ExtrapolatePose`函数会根据时间估计出一个初始位姿姿态，位移估计给予最近的位移和线速度以及时间差进行，角度估计给予imu_tracker的角度增量估计和最近的角度的累积；
 ```
   struct TimedPose {
     common::Time time;
     transform::Rigid3d pose;
   };
 
-
-//std::deque<TimedPose> timed_pose_queue_;
+//std::deque<TimedPose> timed_pose_queue_; timed_pose_queue_记录了通过局部位姿优化后的较为精确的位姿序列。
 //cached_extrapolated_pose_保留time时刻姿势外推器预测的位姿信息
-//ExtrapolatePose
+//ExtrapolatePose函数基于最近一些优化的位姿信息和当前时间和优化位姿的时间差及最近预估的线速度得出预估的位移(主要通过函数ExtrapolateTranslation计算估计)
+//利用ExtrapolateRotation给定的参数的时间估计时间差你的旋转量，由于参数传递的是extrapolation_imu_tracker_，其在AddPose函数时会进行重新初始化
 transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
   const TimedPose& newest_timed_pose = timed_pose_queue_.back();
   CHECK_GE(time, newest_timed_pose.time);
@@ -82,6 +81,46 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
         TimedPose{time, transform::Rigid3d{translation, rotation}};
   }
   return cached_extrapolated_pose_.pose;
+}
+
+//参数imu_tracker在addpose时进行了初始化，
+//odometry_imu_tracker_ = absl::make_unique<ImuTracker>(*imu_tracker_);
+//extrapolation_imu_tracker_ = absl::make_unique<ImuTracker>(*imu_tracker_);
+//因此对imu_tracker进行了预积分，但是函数体内的imu_tracker_还是原始的imu_tracker_，
+//因此通过两个tracker之间的角度差异得出上次的位姿优化时间到当前时间time段内的积分角度
+Eigen::Quaterniond PoseExtrapolator::ExtrapolateRotation(
+    const common::Time time, ImuTracker* const imu_tracker) const {
+  CHECK_GE(time, imu_tracker->time());
+  AdvanceImuTracker(time, imu_tracker);
+  const Eigen::Quaterniond last_orientation = imu_tracker_->orientation();
+  return last_orientation.inverse() * imu_tracker->orientation();
+}
+```
+
+`AddPose`函数维护了最近一段时间内的优化的位姿，早期的会从队列中移出。
+
+```
+void PoseExtrapolator::AddPose(const common::Time time,
+                               const transform::Rigid3d& pose) {
+  if (imu_tracker_ == nullptr) {
+    common::Time tracker_start = time;
+    if (!imu_data_.empty()) {
+      tracker_start = std::min(tracker_start, imu_data_.front().time);
+    }
+    imu_tracker_ =
+        absl::make_unique<ImuTracker>(gravity_time_constant_, tracker_start);
+  }
+  timed_pose_queue_.push_back(TimedPose{time, pose});
+  while (timed_pose_queue_.size() > 2 &&
+         timed_pose_queue_[1].time <= time - pose_queue_duration_) {
+    timed_pose_queue_.pop_front();
+  }
+  UpdateVelocitiesFromPoses();
+  AdvanceImuTracker(time, imu_tracker_.get());
+  TrimImuData();
+  TrimOdometryData();
+  odometry_imu_tracker_ = absl::make_unique<ImuTracker>(*imu_tracker_);
+  extrapolation_imu_tracker_ = absl::make_unique<ImuTracker>(*imu_tracker_);
 }
 ```
 
@@ -154,3 +193,4 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
                      std::move(insertion_result)});
 }
 ```
+### 姿态外推器的pose只是局部优化的位姿和imu的预积分的结合吗，全局优化的位姿是否也会对其产生影响？
