@@ -427,9 +427,6 @@ void SensorBridge::HandleLaserScan(
 
 ### 问题2：多个Lidarsensor的数据如何进行合并，都是基于subdivision进行的合并吗？
 
-
-
-
 ## 如何通过服务在已经启动的cartographer ros节点中添加新的trajectory用于多机器协同建图或分段建图？
 
 ```
