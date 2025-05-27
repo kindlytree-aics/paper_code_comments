@@ -211,3 +211,7 @@ void PoseGraph2D::AddWorkItem(
   work_queue_->push_back({now, work_item});
 }
 ```
+
+References
+
+[1]、cartographer代码仓： cartographer-project/cartographer

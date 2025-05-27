@@ -91,3 +91,7 @@ for (const Eigen::Array2i& cell_index : ray_mask) {
 
 关于全局地图信息的维护等等，由于cartographer系统中面向对象的代码可复用良好的设计模式的使用，整个局部SLAM和全局SLAM的框架结构是复用的，和ProbabilityGrid的地图方法保持一致。
 具体可以参考前面文章的描述。
+
+References
+
+[1]、cartographer代码仓： cartographer-project/cartographer
