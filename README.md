@@ -15,3 +15,4 @@
 
 - [Scaling Cross-Embodied Learning: One Policy for Manipulation, Navigation, Locomotion and Aviation](https://arxiv.org/pdf/2408.11812)
 - [VoxPoser: Composable 3D Value Maps for Robotic Manipulation with Language Models](https://voxposer.github.io/)
+- [Reinforcement Learning with Foundation Priors Let he Embodied Agent Efficiently Learn on Its Own](https://arxiv.org/pdf/2310.02635)
